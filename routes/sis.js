@@ -231,7 +231,7 @@ router.get('/sync', async (req, res) => {
         const studentId = (row.other_id || '').toString().trim();
         const firstName = (row.first_name || '').trim();
         const lastName = (row.last_name || '').trim();
-        const address = (row.address || '').trim();
+        const address = (row.single_line_address || row.address || '').trim();
 
         if (!firstName || !lastName || !address) {
           skipped++;
