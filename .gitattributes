@@ -1,0 +1,17 @@
+# Normalize line endings to LF on commit, checkout as native
+* text=auto
+
+# Force LF for source files (prevents CRLF issues across platforms)
+*.js text eol=lf
+*.json text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.md text eol=lf
+
+# Binary files
+*.db binary
+*.shp binary
+*.dbf binary
+*.shx binary
+*.prj binary
+*.zip binary

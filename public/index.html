@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TransferMap - District Boundary Checker</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>TransferMap</h1>
+      <p>School District Boundary Checker</p>
+      <button id="btn-settings" class="btn btn-header">Settings</button>
+      <button id="btn-logout" class="btn btn-header">Logout</button>
+    </header>
+
+    <div class="main-layout">
+      <aside class="sidebar">
+        <section class="panel">
+          <div class="search-container">
+            <input type="text" id="address-search" placeholder="Search for an address..." autocomplete="off" />
+            <div id="search-suggestions" class="suggestions hidden"></div>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Students</h2>
+          <div class="panel-actions">
+            <button id="btn-sync-sis" class="btn btn-primary">Sync from SIS</button>
+            <button id="btn-add-student" class="btn btn-secondary">Add Student</button>
+            <button id="btn-upload-students" class="btn btn-secondary">Upload CSV</button>
+          </div>
+          <input type="file" id="student-file-input" accept=".csv" hidden />
+          <div class="panel-actions" style="margin-top: 8px; display: none;">
+            <button id="btn-geocode-all" class="btn btn-warning">Geocode All</button>
+            <button id="btn-check-boundaries" class="btn btn-success">Check Boundaries</button>
+          </div>
+          <div id="student-stats" class="stats"></div>
+        </section>
+
+        <div class="student-sections">
+          <div id="out-section" class="student-section hidden">
+            <h3 class="section-header section-out">Out of District</h3>
+            <input type="text" class="section-filter" data-list="out-list" placeholder="Filter..." />
+            <div id="out-list" class="section-scroll"></div>
+          </div>
+
+          <div id="in-section" class="student-section hidden">
+            <h3 class="section-header section-in">Eligible (In District)</h3>
+            <input type="text" class="section-filter" data-list="in-list" placeholder="Filter..." />
+            <div id="in-list" class="section-scroll"></div>
+          </div>
+        </div>
+      </aside>
+
+      <div id="map"></div>
+    </div>
+
+    <div id="student-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Add Student</h3>
+        <form id="student-form">
+          <label>Student ID (optional)<input type="text" name="student_id" /></label>
+          <label>First Name *<input type="text" name="first_name" required /></label>
+          <label>Last Name *<input type="text" name="last_name" required /></label>
+          <label>Address *<input type="text" name="address" required /></label>
+          <label>Entry Code
+            <input type="text" name="entry_code" placeholder="e.g. 3, 6, etc." />
+          </label>
+          <label>Enrollment Status
+            <select name="enrollment_status">
+              <option value="existing">Existing</option>
+              <option value="new">New Enrollment</option>
+              <option value="transfer">Transfer</option>
+            </select>
+          </label>
+          <div class="modal-actions">
+            <button type="submit" class="btn btn-primary">Add</button>
+            <button type="button" class="btn btn-secondary" id="btn-cancel-student">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3>Settings</h3>
+        <form id="settings-form">
+          <label>ArcGIS API Key (optional)
+            <input type="password" name="arcgis_key" id="arcgis-key-input" placeholder="Leave blank to use free geocoding" />
+          </label>
+          <p class="hint" id="arcgis-status"></p>
+          <div class="modal-actions">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn btn-secondary" id="btn-cancel-settings">Cancel</button>
+          </div>
+        </form>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;" />
+        <h3>District Boundaries</h3>
+        <div class="panel-actions">
+          <button id="btn-draw-boundary" class="btn btn-primary">Draw Boundary</button>
+          <button id="btn-upload-boundary" class="btn btn-secondary">Upload File</button>
+        </div>
+        <input type="file" id="boundary-file-input" accept=".geojson,.json,.shp,.zip" hidden />
+        <div id="boundary-list" class="item-list" style="margin-top: 10px;"></div>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;" />
+        <h3>Change Password</h3>
+        <form id="change-password-form">
+          <label>Current Password<input type="password" id="cp-current" required /></label>
+          <label>New Password<input type="password" id="cp-new" required minlength="4" /></label>
+          <label>Confirm New Password<input type="password" id="cp-confirm" required minlength="4" /></label>
+          <div id="cp-error" class="error-msg hidden"></div>
+          <div class="modal-actions">
+            <button type="submit" class="btn btn-primary">Change Password</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="boundary-modal" class="modal hidden">
+      <div class="modal-content">
+        <h3 id="boundary-modal-title">Name This Boundary</h3>
+        <form id="boundary-form">
+          <label>Boundary Name *<input type="text" name="name" required /></label>
+          <div class="modal-actions">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn btn-secondary" id="btn-cancel-boundary">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

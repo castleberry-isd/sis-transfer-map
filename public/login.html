@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TransferMap - Login</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-box">
+      <h1>TransferMap</h1>
+      <p class="login-subtitle">School District Boundary Checker</p>
+
+      <form id="login-form" class="hidden">
+        <label>Password<input type="password" id="login-password" required autofocus /></label>
+        <div id="login-error" class="error-msg hidden"></div>
+        <button type="submit" class="btn btn-primary btn-full">Log In</button>
+      </form>
+
+      <form id="setup-form" class="hidden">
+        <p class="hint">Welcome! Create a password to protect this application.</p>
+        <label>New Password<input type="password" id="setup-password" required minlength="4" autofocus /></label>
+        <label>Confirm Password<input type="password" id="setup-confirm" required minlength="4" /></label>
+        <div id="setup-error" class="error-msg hidden"></div>
+        <button type="submit" class="btn btn-primary btn-full">Set Password &amp; Continue</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    async function api(url, options = {}) {
+      const res = await fetch(url, {
+        headers: { 'Content-Type': 'application/json', ...options.headers },
+        ...options,
+      });
+      return res.json();
+    }
+
+    async function init() {
+      const status = await api('/api/auth/status');
+
+      if (status.authenticated) {
+        window.location.href = '/';
+        return;
+      }
+
+      if (status.passwordSet) {
+        document.getElementById('login-form').classList.remove('hidden');
+      } else {
+        document.getElementById('setup-form').classList.remove('hidden');
+      }
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('login-error');
+      errorEl.classList.add('hidden');
+
+      const password = document.getElementById('login-password').value;
+      const result = await api('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+      });
+
+      if (result.error) {
+        errorEl.textContent = result.error;
+        errorEl.classList.remove('hidden');
+      } else {
+        window.location.href = '/';
+      }
+    });
+
+    document.getElementById('setup-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('setup-error');
+      errorEl.classList.add('hidden');
+
+      const password = document.getElementById('setup-password').value;
+      const confirm = document.getElementById('setup-confirm').value;
+
+      if (password !== confirm) {
+        errorEl.textContent = 'Passwords do not match';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      const result = await api('/api/auth/setup', {
+        method: 'POST',
+        body: JSON.stringify({ password }),
+      });
+
+      if (result.error) {
+        errorEl.textContent = result.error;
+        errorEl.classList.remove('hidden');
+      } else {
+        window.location.href = '/';
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{
+  "name": "transfermap",
+  "version": "1.0.0",
+  "description": "School district boundary mapping and student address checker",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@turf/turf": "^7.3.4",
+    "adm-zip": "^0.5.16",
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.6.2",
+    "csv-parse": "^6.1.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "multer": "^2.1.1",
+    "odbc": "^2.4.9",
+    "shapefile": "^0.6.6"
+  }
+}
