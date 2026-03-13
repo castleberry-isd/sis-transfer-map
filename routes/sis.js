@@ -13,135 +13,146 @@ const CONNECTION_STRING = process.env.SIS_ODBC_CONNECTION_STRING;
 
 const SIS_QUERY = `
 SELECT
-    s."OTHER-ID"                                 AS other_id,
-    se."STUDENT-STATUS"                          AS student_status,
-    CASE WHEN se."STUDENT-CY-MEMBER" = 1
-         THEN 'Cur' ELSE 'Pre' END              AS cur_or_pre,
-    s."GRAD-YR"                                  AS grad_year,
-    n."LAST-NAME"                                AS last_name,
-    n."FIRST-NAME"                               AS first_name,
-    CASE WHEN addr."STREET-NUMBER" <> ''
-         THEN addr."STREET-NUMBER"
-           || ' ' || addr."STREET-NAME"
-           || CASE WHEN addr."STREET-APPT" <> ''
-                   THEN ' ' || addr."STREET-APPT"
-                   ELSE '' END
-         ELSE '' END                             AS address,
-    gn."FIRST-NAME" || ' ' ||
-      gn."LAST-NAME"                            AS guardian_name,
-    gn."INTERNET-ADDRESS"                        AS guardian_email,
-    gn."PRIMARY-PHONE"                           AS guardian_phone,
-    CASE
-        WHEN 12 - (s."GRAD-YR" - 2026) < 0  THEN 'PK'
-        WHEN 12 - (s."GRAD-YR" - 2026) = 0  THEN 'KG'
-        ELSE CAST(12 - (s."GRAD-YR" - 2026) AS VARCHAR(2))
-    END                                          AS student_grade,
-    sch."SCHOOL-NAME"                            AS campus,
-    ew."DISTRICT-CODE"                           AS res_district,
-    d."DISTRICT-NAME"                            AS res_dist_desc,
-    addr.GEOCODE                                 AS arcgis_display,
-    ew."ENTRYC-CODE"                             AS entry_code,
-    ec."ENTRYC-LDESC"                            AS entry_desc,
-    sx."SPEC-ED"                                 AS spec_ed_status,
-    sx."PRI-DISABILITY"                          AS pri_dis_code,
-    CASE sx."PRI-DISABILITY"
-        WHEN '01' THEN 'Intellectual Disability'
-        WHEN '02' THEN 'Orthopedic Impairment'
-        WHEN '03' THEN 'Other Health Impairment'
-        WHEN '04' THEN 'Auditory Impairment'
-        WHEN '05' THEN 'Visual Impairment'
-        WHEN '06' THEN 'Emotional Disturbance'
-        WHEN '07' THEN 'Learning Disability'
-        WHEN '08' THEN 'Speech Impairment'
-        WHEN '09' THEN 'Autism'
-        WHEN '10' THEN 'Developmental Delay'
-        WHEN '12' THEN 'Deaf-Blind'
-        WHEN '13' THEN 'Traumatic Brain Injury'
-        WHEN '14' THEN 'Noncategorical Early Childhood'
-        ELSE '' END                              AS pri_dis_desc,
-    tn."FIRST-NAME" || ' ' ||
-      tn."LAST-NAME"                            AS homeroom_tchr,
-    se."HOMEROOM-NUMBER"                         AS homeroom_number,
-    CASE
-        WHEN n."ETHNICITY-HISP-X" = 1
-            THEN 'Hispanic/Latino'
-        WHEN SUBSTRING(n."FED-RACE-FLAGS",1,1) = '1'
-         AND SUBSTRING(n."FED-RACE-FLAGS",2,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",3,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",4,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",5,1) = '0'
-            THEN 'American Indian or Alaska Native'
-        WHEN SUBSTRING(n."FED-RACE-FLAGS",2,1) = '1'
-         AND SUBSTRING(n."FED-RACE-FLAGS",1,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",3,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",4,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",5,1) = '0'
-            THEN 'Asian'
-        WHEN SUBSTRING(n."FED-RACE-FLAGS",3,1) = '1'
-         AND SUBSTRING(n."FED-RACE-FLAGS",1,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",2,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",4,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",5,1) = '0'
-            THEN 'Black or African American'
-        WHEN SUBSTRING(n."FED-RACE-FLAGS",4,1) = '1'
-         AND SUBSTRING(n."FED-RACE-FLAGS",1,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",2,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",3,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",5,1) = '0'
-            THEN 'Native Hawaiian or Other Pacific Islander'
-        WHEN SUBSTRING(n."FED-RACE-FLAGS",5,1) = '1'
-         AND SUBSTRING(n."FED-RACE-FLAGS",1,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",2,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",3,1) = '0'
-         AND SUBSTRING(n."FED-RACE-FLAGS",4,1) = '0'
-            THEN 'White'
-        ELSE 'Two or More Races'
-    END                                          AS eth_race_desc,
-    n."GENDER"                                   AS gender,
-    CASE WHEN n."ETHNICITY-HISP-X" = 1
-         THEN 'Y' ELSE 'N' END                  AS hisp_lat_eth
-FROM SKYWARD.PUB.STUDENT s
-JOIN SKYWARD.PUB.NAME n
-  ON n."NAME-ID" = s."NAME-ID"
-JOIN SKYWARD.PUB."STUDENT-ENTITY" se
-  ON se."STUDENT-ID" = s."STUDENT-ID"
-JOIN SKYWARD.PUB.SCHOOL sch
-  ON sch."SCHOOL-ID" = se."SCHOOL-ID"
-LEFT JOIN SKYWARD.PUB.ADDRESS addr
-  ON addr."ADDRESS-ID" = n."ADDRESS-ID"
-LEFT JOIN SKYWARD.PUB."STUDENT-EXT" sx
-  ON sx."STUDENT-ID" = s."STUDENT-ID"
-LEFT JOIN SKYWARD.PUB."STUDENT-EW" ew
-  ON ew."STUDENT-ID" = s."STUDENT-ID"
- AND ew."ENTITY-ID" = se."ENTITY-ID"
- AND ew."WITHDRAWAL-CODE" = ''
- AND ew."EW-DATE" = (
-    SELECT MAX(ew2."EW-DATE")
-    FROM SKYWARD.PUB."STUDENT-EW" ew2
-    WHERE ew2."STUDENT-ID" = ew."STUDENT-ID"
-      AND ew2."ENTITY-ID" = ew."ENTITY-ID"
-      AND ew2."WITHDRAWAL-CODE" = ''
-  )
-LEFT JOIN SKYWARD.PUB.ENTRYC ec
-  ON ec."ENTRYC-CODE" = ew."ENTRYC-CODE"
-LEFT JOIN SKYWARD.PUB.DISTRICT d
-  ON d."DISTRICT-CODE" = ew."DISTRICT-CODE"
-LEFT JOIN SKYWARD.PUB."STUDENT-GUARDIAN" sg
-  ON sg."STUDENT-ID" = s."STUDENT-ID"
- AND sg."CUST-PAR" = 1
- AND sg."NAME-ID" = (
-    SELECT MIN(sg2."NAME-ID")
-    FROM SKYWARD.PUB."STUDENT-GUARDIAN" sg2
-    WHERE sg2."STUDENT-ID" = s."STUDENT-ID"
-      AND sg2."CUST-PAR" = 1
-  )
-LEFT JOIN SKYWARD.PUB.NAME gn
-  ON gn."NAME-ID" = sg."NAME-ID"
-LEFT JOIN SKYWARD.PUB.NAME tn
-  ON tn."NAME-ID" = se."ADVISOR"
- AND se."ADVISOR" > 0
-WHERE se."STUDENT-STATUS" = 'A'
-ORDER BY sch."SCHOOL-NAME", n."LAST-NAME", n."FIRST-NAME"
+      s."OTHER-ID"                                 AS other_id,
+      se."STUDENT-STATUS"                          AS student_status,
+      CASE WHEN se."STUDENT-CY-MEMBER" = 1
+           THEN 'Cur' ELSE 'Pre' END              AS cur_or_pre,
+      s."GRAD-YR"                                  AS grad_year,
+      n."LAST-NAME"                                AS last_name,
+      n."FIRST-NAME"                               AS first_name,
+      CASE WHEN LTRIM(RTRIM(addr."STREET-NUMBER")) <> ''
+           THEN LTRIM(RTRIM(addr."STREET-NUMBER"))
+             || ' ' || LTRIM(RTRIM(addr."STREET-NAME"))
+             || CASE WHEN LTRIM(RTRIM(addr."STREET-APPT")) <> ''
+                     THEN ' ' || LTRIM(RTRIM(addr."STREET-APPT"))
+                     ELSE '' END
+           ELSE '' END                             AS address,
+      LTRIM(RTRIM(z."ZIP-CITY"))                   AS city,
+      LTRIM(RTRIM(z."ZIP-STATE"))                  AS state,
+      LTRIM(RTRIM(addr."ZIP-CODE"))                AS zip,
+      CASE WHEN LTRIM(RTRIM(addr."STREET-NUMBER")) <> ''
+           THEN LTRIM(RTRIM(addr."STREET-NUMBER"))
+             || ' ' || LTRIM(RTRIM(addr."STREET-NAME"))
+             || CASE WHEN LTRIM(RTRIM(addr."STREET-APPT")) <> ''
+                     THEN ' ' || LTRIM(RTRIM(addr."STREET-APPT"))
+                     ELSE '' END
+             || CASE WHEN LTRIM(RTRIM(z."ZIP-CITY")) <> ''
+                     THEN ', ' || LTRIM(RTRIM(z."ZIP-CITY"))
+                     ELSE '' END
+             || CASE WHEN LTRIM(RTRIM(z."ZIP-STATE")) <> ''
+                     THEN ', ' || LTRIM(RTRIM(z."ZIP-STATE"))
+                     ELSE '' END
+             || CASE WHEN LTRIM(RTRIM(addr."ZIP-CODE")) <> ''
+                     THEN ' ' || LTRIM(RTRIM(addr."ZIP-CODE"))
+                     ELSE '' END
+           ELSE '' END                             AS single_line_address,
+      gn."FIRST-NAME" || ' ' ||
+        gn."LAST-NAME"                            AS guardian_name,
+      gn."INTERNET-ADDRESS"                        AS guardian_email,
+      gn."PRIMARY-PHONE"                           AS guardian_phone,
+      CASE
+          WHEN 12 - (s."GRAD-YR" - 2026) < 0  THEN 'PK'
+          WHEN 12 - (s."GRAD-YR" - 2026) = 0  THEN 'KG'
+          ELSE CAST(12 - (s."GRAD-YR" - 2026) AS VARCHAR(2))
+      END                                          AS student_grade,
+      sch."SCHOOL-NAME"                            AS campus,
+      ew."DISTRICT-CODE"                           AS res_district,
+      d."DISTRICT-NAME"                            AS res_dist_desc,
+      addr."GEOCODE"                               AS arcgis_display,
+      ew."ENTRYC-CODE"                             AS entry_code,
+      ec."ENTRYC-LDESC"                            AS entry_desc,
+      sx."SPEC-ED"                                 AS spec_ed_status,
+      sx."PRI-DISABILITY"                          AS pri_dis_code,
+      CASE sx."PRI-DISABILITY"
+          WHEN '01' THEN 'Intellectual Disability'
+          WHEN '02' THEN 'Orthopedic Impairment'
+          WHEN '03' THEN 'Other Health Impairment'
+          WHEN '04' THEN 'Auditory Impairment'
+          WHEN '05' THEN 'Visual Impairment'
+          WHEN '06' THEN 'Emotional Disturbance'
+          WHEN '07' THEN 'Learning Disability'
+          WHEN '08' THEN 'Speech Impairment'
+          WHEN '09' THEN 'Autism'
+          WHEN '10' THEN 'Developmental Delay'
+          WHEN '12' THEN 'Deaf-Blind'
+          WHEN '13' THEN 'Traumatic Brain Injury'
+          WHEN '14' THEN 'Noncategorical Early Childhood'
+          ELSE '' END                              AS pri_dis_desc,
+      tn."FIRST-NAME" || ' ' ||
+        tn."LAST-NAME"                            AS homeroom_tchr,
+      se."HOMEROOM-NUMBER"                         AS homeroom_number,
+      CASE
+          WHEN n."ETHNICITY-HISP-X" = 1
+              THEN 'Hispanic/Latino'
+          WHEN SUBSTRING(n."FED-RACE-FLAGS",1,1) = '1'
+           AND SUBSTRING(n."FED-RACE-FLAGS",2,4) = '0000'
+              THEN 'American Indian or Alaska Native'
+          WHEN SUBSTRING(n."FED-RACE-FLAGS",2,1) = '1'
+           AND SUBSTRING(n."FED-RACE-FLAGS",1,1) = '0'
+           AND SUBSTRING(n."FED-RACE-FLAGS",3,3) = '000'
+              THEN 'Asian'
+          WHEN SUBSTRING(n."FED-RACE-FLAGS",3,1) = '1'
+           AND SUBSTRING(n."FED-RACE-FLAGS",1,2) = '00'
+           AND SUBSTRING(n."FED-RACE-FLAGS",4,2) = '00'
+              THEN 'Black or African American'
+          WHEN SUBSTRING(n."FED-RACE-FLAGS",4,1) = '1'
+           AND SUBSTRING(n."FED-RACE-FLAGS",1,3) = '000'
+           AND SUBSTRING(n."FED-RACE-FLAGS",5,1) = '0'
+              THEN 'Native Hawaiian or Other Pacific Islander'
+          WHEN SUBSTRING(n."FED-RACE-FLAGS",5,1) = '1'
+           AND SUBSTRING(n."FED-RACE-FLAGS",1,4) = '0000'
+              THEN 'White'
+          ELSE 'Two or More Races'
+      END                                          AS eth_race_desc,
+      CASE WHEN SUBSTRING(n."FED-RACE-FLAGS",5,1) = '1'
+           THEN 'Y' ELSE 'N' END                  AS white,
+      n."GENDER"                                   AS gender,
+      CASE WHEN n."ETHNICITY-HISP-X" = 1
+           THEN 'Y' ELSE 'N' END                  AS hisp_lat_eth
+  FROM SKYWARD.PUB.STUDENT s
+  JOIN SKYWARD.PUB.NAME n
+    ON n."NAME-ID" = s."NAME-ID"
+  JOIN SKYWARD.PUB."STUDENT-ENTITY" se
+    ON se."STUDENT-ID" = s."STUDENT-ID"
+  JOIN SKYWARD.PUB.SCHOOL sch
+    ON sch."SCHOOL-ID" = se."SCHOOL-ID"
+  LEFT JOIN SKYWARD.PUB.ADDRESS addr
+    ON addr."ADDRESS-ID" = n."ADDRESS-ID"
+  LEFT JOIN SKYWARD.PUB.ZIP z
+    ON z."ZIP-CODE" = addr."ZIP-CODE"
+  LEFT JOIN SKYWARD.PUB."STUDENT-EXT" sx
+    ON sx."STUDENT-ID" = s."STUDENT-ID"
+  LEFT JOIN SKYWARD.PUB."STUDENT-EW" ew
+    ON ew."STUDENT-ID" = s."STUDENT-ID"
+   AND ew."ENTITY-ID" = se."ENTITY-ID"
+   AND ew."WITHDRAWAL-CODE" = ''
+   AND ew."EW-DATE" = (
+      SELECT MAX(ew2."EW-DATE")
+      FROM SKYWARD.PUB."STUDENT-EW" ew2
+      WHERE ew2."STUDENT-ID" = ew."STUDENT-ID"
+        AND ew2."ENTITY-ID" = ew."ENTITY-ID"
+        AND ew2."WITHDRAWAL-CODE" = ''
+    )
+  LEFT JOIN SKYWARD.PUB.ENTRYC ec
+    ON ec."ENTRYC-CODE" = ew."ENTRYC-CODE"
+  LEFT JOIN SKYWARD.PUB.DISTRICT d
+    ON d."DISTRICT-CODE" = ew."DISTRICT-CODE"
+  LEFT JOIN SKYWARD.PUB."STUDENT-GUARDIAN" sg
+    ON sg."STUDENT-ID" = s."STUDENT-ID"
+   AND sg."CUST-PAR" = 1
+   AND sg."NAME-ID" = (
+      SELECT MIN(sg2."NAME-ID")
+      FROM SKYWARD.PUB."STUDENT-GUARDIAN" sg2
+      WHERE sg2."STUDENT-ID" = s."STUDENT-ID"
+        AND sg2."CUST-PAR" = 1
+    )
+  LEFT JOIN SKYWARD.PUB.NAME gn
+    ON gn."NAME-ID" = sg."NAME-ID"
+  LEFT JOIN SKYWARD.PUB.NAME tn
+    ON tn."NAME-ID" = se."ADVISOR"
+   AND se."ADVISOR" > 0
+  WHERE se."STUDENT-STATUS" = 'A'
+  ORDER BY sch."SCHOOL-NAME", n."LAST-NAME", n."FIRST-NAME"
 `;
 
 // Sync active students from Skyward SIS via ODBC (SSE endpoint)
