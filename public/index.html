@@ -29,10 +29,8 @@
           <h2>Students</h2>
           <div class="panel-actions">
             <button id="btn-sync-sis" class="btn btn-primary">Sync from SIS</button>
-            <button id="btn-add-student" class="btn btn-secondary">Add Student</button>
-            <button id="btn-upload-students" class="btn btn-secondary">Upload CSV</button>
+
           </div>
-          <input type="file" id="student-file-input" accept=".csv" hidden />
           <div class="panel-actions" style="margin-top: 8px; display: none;">
             <button id="btn-geocode-all" class="btn btn-warning">Geocode All</button>
             <button id="btn-check-boundaries" class="btn btn-success">Check Boundaries</button>
@@ -56,32 +54,6 @@
       </aside>
 
       <div id="map"></div>
-    </div>
-
-    <div id="student-modal" class="modal hidden">
-      <div class="modal-content">
-        <h3>Add Student</h3>
-        <form id="student-form">
-          <label>Student ID (optional)<input type="text" name="student_id" /></label>
-          <label>First Name *<input type="text" name="first_name" required /></label>
-          <label>Last Name *<input type="text" name="last_name" required /></label>
-          <label>Address *<input type="text" name="address" required /></label>
-          <label>Entry Code
-            <input type="text" name="entry_code" placeholder="e.g. 3, 6, etc." />
-          </label>
-          <label>Enrollment Status
-            <select name="enrollment_status">
-              <option value="existing">Existing</option>
-              <option value="new">New Enrollment</option>
-              <option value="transfer">Transfer</option>
-            </select>
-          </label>
-          <div class="modal-actions">
-            <button type="submit" class="btn btn-primary">Add</button>
-            <button type="button" class="btn btn-secondary" id="btn-cancel-student">Cancel</button>
-          </div>
-        </form>
-      </div>
     </div>
 
     <div id="settings-modal" class="modal hidden">

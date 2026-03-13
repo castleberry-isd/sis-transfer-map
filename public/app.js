@@ -396,34 +396,6 @@ async function loadStudents() {
   `;
 }
 
-document.getElementById('btn-add-student').addEventListener('click', () => {
-  document.getElementById('student-modal').classList.remove('hidden');
-});
-
-document.getElementById('btn-cancel-student').addEventListener('click', () => {
-  document.getElementById('student-modal').classList.add('hidden');
-  document.getElementById('student-form').reset();
-});
-
-document.getElementById('student-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const form = new FormData(e.target);
-  const data = Object.fromEntries(form.entries());
-
-  const result = await api('/api/students', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-
-  if (result.error) {
-    alert('Error: ' + result.error);
-    return;
-  }
-
-  e.target.reset();
-  document.getElementById('student-modal').classList.add('hidden');
-  loadStudents();
-});
 
 document.getElementById('btn-sync-sis').addEventListener('click', () => {
   if (!confirm('Sync students from Skyward SIS? This will update all student records.')) return;
@@ -467,31 +439,6 @@ document.getElementById('btn-sync-sis').addEventListener('click', () => {
   };
 });
 
-document.getElementById('btn-upload-students').addEventListener('click', () => {
-  document.getElementById('student-file-input').click();
-});
-
-document.getElementById('student-file-input').addEventListener('change', async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const formData = new FormData();
-  formData.append('file', file);
-
-  showProgress(0, 1, 'Importing students...');
-  const res = await fetch('/api/students/upload', { method: 'POST', body: formData });
-  const data = await res.json();
-
-  if (data.error) {
-    hideProgress();
-    alert('Error: ' + data.error);
-    e.target.value = '';
-    return;
-  }
-
-  runProcessPipeline();
-  e.target.value = '';
-});
 
 function runProcessPipeline() {
   showProgress(0, 1, 'Starting geocoding...');
