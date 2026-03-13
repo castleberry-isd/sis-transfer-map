@@ -676,6 +676,11 @@ document.getElementById('change-password-form').addEventListener('submit', async
 });
 
 async function init() {
+  const config = await fetch('/api/config').then(r => r.json());
+  document.getElementById('site-name').textContent = config.siteName;
+  document.getElementById('site-subtitle').textContent = 'District Boundary Checker';
+  document.getElementById('page-title').textContent = config.siteName + ' - District Boundary Checker';
+
   await loadBoundaries();
   loadStudents();
 

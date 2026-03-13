@@ -33,6 +33,10 @@ app.get('/style.css', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'style.css'));
 });
 
+app.get('/api/config', (req, res) => {
+  res.json({ siteName: process.env.SITE_NAME || 'TransferMap' });
+});
+
 app.use('/api/auth', authRoutes);
 
 function requireAuth(req, res, next) {
